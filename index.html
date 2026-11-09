@@ -3208,3 +3208,84 @@ input[type=date][readonly]{cursor:pointer}
   console.log('BOSS HIDE-ONLY + MANUAL RESTORE LOADED: walang auto-buhay pag nag-clear, manual Ibalik History lang');
 })();
 </script>
+
+<!-- GONGSTRNG PRINTER SUPPORT: browser/system print for existing receipts -->
+<style id="gongstrng-printer-css">
+@media print {
+  @page { margin: 2mm; }
+  html, body { background:#fff !important; }
+  .receipt-print-area { width: var(--gs-print-width, 76mm) !important; max-width:var(--gs-print-width,76mm) !important; margin:0 auto !important; padding:2mm !important; border-radius:0 !important; box-sizing:border-box !important; color:#000 !important; }
+  .gs-printer-no-print { display:none !important; }
+}
+.gs-printer-no-print { font-family:Arial,sans-serif; }
+#gs-printer-panel { position:fixed; inset:0; z-index:2147483001; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.88); }
+#gs-printer-card { width:100%; max-width:390px; box-sizing:border-box; padding:18px; border:1px solid #ffcc00; border-radius:18px; background:#101010; color:#fff; font:14px Arial,sans-serif; }
+#gs-printer-card button,#gs-printer-card select { box-sizing:border-box; width:100%; padding:12px; border-radius:10px; font-weight:800; }
+</style>
+<script id="gongstrng-printer-support">
+(function(){
+  if(window.__gongstrngPrinterReady) return;
+  window.__gongstrngPrinterReady=true;
+  var width=localStorage.getItem('g-printer-paper')==='58'?'58':'80';
+  function setWidth(v){
+    width=v==='58'?'58':'80';
+    localStorage.setItem('g-printer-paper',width);
+    document.documentElement.style.setProperty('--gs-print-width',width==='58'?'54mm':'76mm');
+    var sel=document.getElementById('gs-printer-paper'); if(sel) sel.value=width;
+  }
+  setWidth(width);
+  function printNow(){
+    document.documentElement.style.setProperty('--gs-print-width',width==='58'?'54mm':'76mm');
+    window.print();
+  }
+  function addReceiptButtons(){
+    document.querySelectorAll('.receipt-print-area').forEach(function(area){
+      if(area.querySelector('.gs-printer-no-print')) return;
+      var btn=document.createElement('button');
+      btn.type='button'; btn.className='gs-printer-no-print';
+      btn.textContent='🖨 PRINT RECEIPT';
+      btn.style.cssText='display:block;width:100%;margin-top:12px;padding:12px;background:#ffcc00;color:#000;border:0;border-radius:10px;font-weight:900;font-size:13px;cursor:pointer;';
+      btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();printNow();});
+      area.appendChild(btn);
+    });
+  }
+  function ensurePanel(){
+    if(document.getElementById('gs-printer-panel')) return;
+    var panel=document.createElement('div'); panel.id='gs-printer-panel';
+    panel.innerHTML='<div id="gs-printer-card"><div style="font-size:17px;font-weight:900;color:#ffcc00">🖨 PRINTER SETTINGS</div><p style="color:#bbb;line-height:1.5;margin:10px 0">Gamit ang Android / browser print dialog para pumili ng nakakabit na printer. Kailangan naka-install at enabled ang printer service sa phone.</p><label for="gs-printer-paper" style="display:block;margin:12px 0 6px;font-weight:800">PAPER WIDTH</label><select id="gs-printer-paper" style="background:#222;color:#fff;border:1px solid #555"><option value="58">58mm Thermal</option><option value="80">80mm Thermal</option></select><button id="gs-printer-test" style="margin-top:12px;background:#ffcc00;color:#000;border:0">TEST PRINT</button><button id="gs-printer-close" style="margin-top:8px;background:#222;color:#fff;border:1px solid #555">CLOSE</button><div style="font-size:11px;color:#888;line-height:1.5;margin-top:12px">Note: Ang Bluetooth Classic ESC/POS at cash-drawer RJ11 command ay hindi direktang naa-access ng ordinaryong web page. Ang feature na ito ay standard system printing muna.</div></div>';
+    document.body.appendChild(panel);
+    document.getElementById('gs-printer-paper').value=width;
+    document.getElementById('gs-printer-paper').addEventListener('change',function(){setWidth(this.value);});
+    document.getElementById('gs-printer-close').addEventListener('click',function(){panel.style.display='none';});
+    document.getElementById('gs-printer-test').addEventListener('click',function(){
+      var old=document.getElementById('gs-printer-test-area'); if(old) old.remove();
+      var test=document.createElement('div'); test.id='gs-printer-test-area'; test.className='receipt-print-area';
+      test.style.cssText='position:fixed;left:-10000px;top:0;background:#fff;color:#000;font:12px monospace;padding:8px;box-sizing:border-box;';
+      test.innerHTML='<div style="text-align:center;font-weight:900;font-size:15px">GONGSTRNG MOTORSHOP</div><div style="text-align:center">PRINTER TEST</div><hr><div>Paper: '+width+'mm</div><div>Test: 1234567890</div><div>Salamat!</div>';
+      document.body.appendChild(test);
+      panel.style.display='none';
+      setTimeout(function(){printNow();setTimeout(function(){test.remove();},1000);},250);
+    });
+  }
+  function addHeaderButton(){
+    var settings=null;
+    document.querySelectorAll('button').forEach(function(b){if((b.textContent||'').trim()==='SETTINGS')settings=b;});
+    if(!settings || document.getElementById('gs-printer-open')) return;
+    var b=document.createElement('button'); b.id='gs-printer-open'; b.type='button'; b.textContent='🖨 PRINTER';
+    b.style.cssText='background:#111;color:#ffcc00;border:1px solid #ffcc00;border-radius:999px;padding:6px 12px;font-size:11px;font-weight:900;cursor:pointer;margin-right:6px;';
+    b.addEventListener('click',function(){ensurePanel();document.getElementById('gs-printer-panel').style.display='flex';});
+    settings.parentNode.insertBefore(b,settings);
+  }
+  function run(){
+    if(document.querySelector('#root input[placeholder="Enter Password"]')) return;
+    addHeaderButton(); addReceiptButtons();
+  }
+  run();
+  var observer=new MutationObserver(run);
+  observer.observe(document.body,{childList:true,subtree:true});
+  setInterval(run,2000);
+  window.GONGSTRNG_PRINT_RECEIPT=printNow;
+  console.log('GONGSTRNG printer support ready: system print, 58/80mm');
+})();
+</script>
+
