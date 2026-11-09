@@ -1,0 +1,10 @@
+{
+  "name": "GONGSTRNG MOTORSHOP POS",
+  "short_name": "GONGSTRNG",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#ffcc00",
+  "description": "GONGSTRNG Motorshop Point of Sale"
+}
