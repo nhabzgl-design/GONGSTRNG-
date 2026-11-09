@@ -3234,9 +3234,19 @@ input[type=date][readonly]{cursor:pointer}
     var sel=document.getElementById('gs-printer-paper'); if(sel) sel.value=width;
   }
   setWidth(width);
-  function printNow(){
+  function printNow(source){
     document.documentElement.style.setProperty('--gs-print-width',width==='58'?'54mm':'76mm');
+    var original=source||document.querySelector('.receipt-print-area');
+    if(!original){alert('Walang receipt na puwedeng i-print.');return;}
+    var clone=original.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('.gs-printer-no-print').forEach(function(x){x.remove();});
+    clone.style.position='absolute'; clone.style.left='0'; clone.style.top='0'; clone.style.zIndex='2147483647';
+    document.body.appendChild(clone);
+    var cleanup=function(){if(clone.parentNode)clone.remove();window.removeEventListener('afterprint',cleanup);};
+    window.addEventListener('afterprint',cleanup);
     window.print();
+    setTimeout(cleanup,5000);
   }
   function addReceiptButtons(){
     document.querySelectorAll('.receipt-print-area').forEach(function(area){
@@ -3245,7 +3255,7 @@ input[type=date][readonly]{cursor:pointer}
       btn.type='button'; btn.className='gs-printer-no-print';
       btn.textContent='🖨 PRINT RECEIPT';
       btn.style.cssText='display:block;width:100%;margin-top:12px;padding:12px;background:#ffcc00;color:#000;border:0;border-radius:10px;font-weight:900;font-size:13px;cursor:pointer;';
-      btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();printNow();});
+      btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();printNow(area);});
       area.appendChild(btn);
     });
   }
@@ -3264,7 +3274,7 @@ input[type=date][readonly]{cursor:pointer}
       test.innerHTML='<div style="text-align:center;font-weight:900;font-size:15px">GONGSTRNG MOTORSHOP</div><div style="text-align:center">PRINTER TEST</div><hr><div>Paper: '+width+'mm</div><div>Test: 1234567890</div><div>Salamat!</div>';
       document.body.appendChild(test);
       panel.style.display='none';
-      setTimeout(function(){printNow();setTimeout(function(){test.remove();},1000);},250);
+      setTimeout(function(){printNow(test);setTimeout(function(){test.remove();},5500);},250);
     });
   }
   function addHeaderButton(){
