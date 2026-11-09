@@ -3,7 +3,7 @@
   'use strict';
   if(window.__gsBackupReady) return;
   window.__gsBackupReady=true;
-  var PREFIXES=['g-','gong_','gong-'];
+  var PREFIXES=['g-','gong_','gong-','last_'];
   function ownedKeys(){
     var out=[];
     for(var i=0;i<localStorage.length;i++){
